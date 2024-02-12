@@ -1,0 +1,36 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM creditar($1, $2, $3) AS result",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "novo_saldo",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "possui_erro",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "mensagem",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "b73577b32c798edc25a147a1964cb7b7077fa17abbff25077b4735cb07265bbb"
+}

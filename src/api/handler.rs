@@ -15,6 +15,35 @@ pub async fn transacoes(
     Path(id): Path<i32>,
     login: Json<EnviaTranasacao>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
+    // validate
+    match login.tipo.as_str() {
+        "c" => {}
+        "d" => {}
+        _ => {
+            return Err((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Tipo invalido".to_string(),
+            ))
+        }
+    }
+
+    if login.descricao.len() > 20 {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Descrição da transação muito longa".to_string(),
+        ));
+    }
+
+    if login.descricao.len() == 0 {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Descrição da transação muito curta".to_string(),
+        ));
+    }
+
+
+
+
     let user = sqlx::query!("SELECT * FROM clientes WHERE id = $1", id)
         .fetch_one(&app_state.db)
         .await
