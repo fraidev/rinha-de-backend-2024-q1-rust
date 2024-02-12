@@ -7,8 +7,16 @@ ENV SQLX_OFFLINE=true
 # Set the working directory inside the container
 WORKDIR /usr/src/app
 
+# Trick to cache dependencies
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir ./src && echo 'fn main() { println!("Dummy!"); }' > ./src/main.rs
+RUN cargo build --release
+
 # Copy the source code to the working directory
 COPY . .
+
+# Touch the main.rs file to force a rebuild
+RUN touch -a -m ./src/main.rs
 
 # Build the application
 RUN cargo build --release
@@ -25,5 +33,5 @@ COPY --from=builder /usr/src/app/target/release/rinha-de-backend-2024-q1-rust .
 # Expose the port 3000
 EXPOSE 3000
 
-# Run your Axum application
+# Run application
 CMD ["./rinha-de-backend-2024-q1-rust"]

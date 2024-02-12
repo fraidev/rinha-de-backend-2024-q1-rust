@@ -16,42 +16,41 @@ pub async fn transacoes(
     login: Json<EnviaTranasacao>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     // validate
-    match login.tipo.as_str() {
-        "c" => {}
-        "d" => {}
+    let tipo = match login.tipo.as_str() {
+        "c" => TipoTransacao::Credito,
+        "d" => TipoTransacao::Debito,
         _ => {
             return Err((
                 StatusCode::UNPROCESSABLE_ENTITY,
                 "Tipo invalido".to_string(),
             ))
         }
-    }
+    };
 
-    if login.descricao.len() > 20 {
-        return Err((
-            StatusCode::UNPROCESSABLE_ENTITY,
-            "Descrição da transação muito longa".to_string(),
-        ));
-    }
-
-    if login.descricao.len() == 0 {
-        return Err((
-            StatusCode::UNPROCESSABLE_ENTITY,
-            "Descrição da transação muito curta".to_string(),
-        ));
-    }
-
-
-
+    match login.descricao.len() {
+        1..=20 => (),
+        0 => {
+            return Err((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Descrição da transação vazia".to_string(),
+            ))
+        }
+        _ => {
+            return Err((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Descrição da transação muito longa".to_string(),
+            ))
+        }
+    };
 
     let user = sqlx::query!("SELECT * FROM clientes WHERE id = $1", id)
         .fetch_one(&app_state.db)
         .await
         .map_err(map_sql_error)?;
 
-    let transaction = match login.tipo.as_str() {
-        "c" => {
-            let a = sqlx::query!(
+    let transaction = match tipo {
+        TipoTransacao::Credito => {
+            let creditar_result = sqlx::query!(
                 "SELECT * FROM creditar($1, $2, $3) AS result",
                 id,
                 login.valor as i32,
@@ -61,10 +60,10 @@ pub async fn transacoes(
             .await
             .map_err(map_sql_error)?;
 
-            (a.novo_saldo, a.possui_erro, a.mensagem)
+            (creditar_result.novo_saldo, creditar_result.possui_erro, creditar_result.mensagem)
         }
-        "d" => {
-            let b = sqlx::query!(
+        TipoTransacao::Debito => {
+            let debitar_result = sqlx::query!(
                 "SELECT * FROM debitar($1, $2, $3) AS result",
                 id,
                 login.valor as i32,
@@ -74,13 +73,7 @@ pub async fn transacoes(
             .await
             .map_err(map_sql_error)?;
 
-            (b.novo_saldo, b.possui_erro, b.mensagem)
-        }
-        _ => {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "Tipo de transação inválido".to_string(),
-            ))
+            (debitar_result.novo_saldo, debitar_result.possui_erro, debitar_result.mensagem)
         }
     };
 
@@ -91,7 +84,7 @@ pub async fn extrato(
     State(app_state): State<Arc<AppState>>,
     Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let client = sqlx::query!("select * from clientes where id = $1", id,)
+    let client = sqlx::query!("SELECT * FROM clientes WHERE id = $1", id)
         .fetch_one(&app_state.db)
         .await
         .map_err(map_sql_error)?;
@@ -112,14 +105,9 @@ pub async fn extrato(
     })
     .collect();
 
-    let client_saldo = sqlx::query!("SELECT * FROM saldos WHERE cliente_id = $1", id)
-        .fetch_one(&app_state.db)
-        .await
-        .map_err(map_sql_error)?;
-
     let extract = Extrato {
         saldo: Saldo {
-            total: client_saldo.valor as i64,
+            total: client.valor as i64,
             data_extrato: Utc::now().naive_utc(),
             limite: client.limite as u64,
         },
@@ -155,6 +143,11 @@ pub struct Transacao {
     tipo: String,
     descricao: String,
     realizada_em: NaiveDateTime,
+}
+
+enum TipoTransacao {
+    Credito,
+    Debito,
 }
 
 fn map_sql_error(err: sqlx::Error) -> (StatusCode, String) {

@@ -15,6 +15,11 @@
       },
       {
         "ordinal": 2,
+        "name": "valor",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
         "name": "limite",
         "type_info": "Int4"
       }
@@ -25,6 +30,7 @@
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false
