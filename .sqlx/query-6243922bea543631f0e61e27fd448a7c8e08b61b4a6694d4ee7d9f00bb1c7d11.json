@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM clientes WHERE id = $1",
+  "query": "SELECT * FROM cliente WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -36,5 +36,5 @@
       false
     ]
   },
-  "hash": "9b63f587d88310ee34fa85b22c5dfca683024802dd5771d9f95f12bb1059159e"
+  "hash": "6243922bea543631f0e61e27fd448a7c8e08b61b4a6694d4ee7d9f00bb1c7d11"
 }

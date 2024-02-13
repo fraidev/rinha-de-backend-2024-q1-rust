@@ -1,30 +1,35 @@
-CREATE UNLOGGED TABLE clientes (
+CREATE UNLOGGED TABLE cliente (
 	id SERIAL PRIMARY KEY,
 	nome VARCHAR(50) NOT NULL,
 	valor INTEGER NOT NULL,
 	limite INTEGER NOT NULL
 );
 
-CREATE UNLOGGED TABLE transacoes (
+CREATE UNLOGGED TABLE transacao (
 	id SERIAL PRIMARY KEY,
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
 	descricao VARCHAR(10) NOT NULL,
 	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
-	CONSTRAINT fk_clientes_transacoes_id
-		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+	CONSTRAINT fk_cliente_transacao_id
+		FOREIGN KEY (cliente_id) REFERENCES cliente(id)
+);
+
+CREATE INDEX ix_transacao_idcliente ON transacao
+(
+    cliente_id ASC
 );
 
 DO $$
 BEGIN
-	INSERT INTO clientes (nome, limite, valor)
+	INSERT INTO cliente (nome, limite, valor)
 	VALUES
-		('o barato sai caro', 1000 * 100, 0),
-		('zan corp ltda', 800 * 100, 0),
-		('les cruders', 10000 * 100, 0),
-		('padaria joia de cocaia', 100000 * 100, 0),
-		('kid mais', 5000 * 100, 0);
+		('ed', 100000, 0),
+		('li', 80000, 0),
+		('ci', 1000000, 0),
+		('ev', 10000000, 0),
+		('jo', 500000, 0);
 END;
 $$;
 
@@ -49,14 +54,14 @@ BEGIN
 	INTO
 		limite_atual,
 		saldo_atual
-	FROM clientes c
+	FROM cliente c
 	WHERE c.id = cliente_id_tx;
 
 	IF saldo_atual - valor_tx >= limite_atual * -1 THEN
-		INSERT INTO transacoes
+		INSERT INTO transacao
 			VALUES(DEFAULT, cliente_id_tx, valor_tx, 'd', descricao_tx, NOW());
 		
-		UPDATE clientes
+		UPDATE cliente
 		SET valor = valor - valor_tx
 		WHERE id = cliente_id_tx;
 
@@ -65,7 +70,7 @@ BEGIN
 				valor,
 				FALSE,
 				'ok'::VARCHAR(20)
-			FROM clientes
+			FROM cliente
 			WHERE id = cliente_id_tx;
 	ELSE
 		RETURN QUERY
@@ -73,7 +78,7 @@ BEGIN
 				valor,
 				TRUE,
 				'saldo insuficente'::VARCHAR(20)
-			FROM clientes
+			FROM cliente
 			WHERE id = cliente_id_tx;
 	END IF;
 END;
@@ -92,11 +97,11 @@ AS $$
 BEGIN
 	PERFORM pg_advisory_xact_lock(cliente_id_tx);
 
-	INSERT INTO transacoes
+	INSERT INTO transacao
 		VALUES(DEFAULT, cliente_id_tx, valor_tx, 'c', descricao_tx, NOW());
 
 	RETURN QUERY
-		UPDATE clientes
+		UPDATE cliente
 		SET valor = valor + valor_tx
 		WHERE id = cliente_id_tx
 		RETURNING valor, FALSE, 'ok'::VARCHAR(20);

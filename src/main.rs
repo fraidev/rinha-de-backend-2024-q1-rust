@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use dotenv::dotenv;
 use api::router;
+use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::Pool;
 use sqlx::Postgres;

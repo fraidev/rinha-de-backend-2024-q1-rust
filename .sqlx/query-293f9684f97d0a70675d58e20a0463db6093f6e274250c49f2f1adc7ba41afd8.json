@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM transacoes WHERE cliente_id = $1 ORDER BY realizada_em DESC LIMIT 10",
+  "query": "SELECT * FROM transacao WHERE cliente_id = $1 ORDER BY realizada_em DESC LIMIT 10",
   "describe": {
     "columns": [
       {
@@ -48,5 +48,5 @@
       false
     ]
   },
-  "hash": "e6cb3f4afbd9b25f447e18c036ab2862b03d54c1cb702958ae7a4b4541ce2d3e"
+  "hash": "293f9684f97d0a70675d58e20a0463db6093f6e274250c49f2f1adc7ba41afd8"
 }
