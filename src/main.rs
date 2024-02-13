@@ -25,7 +25,7 @@ async fn main() {
 
     // set up connection pool
     let pool = PgPoolOptions::new()
-        .min_connections(5)
+        .min_connections(20)
         .max_connections(1000)
         .acquire_timeout(Duration::from_secs(3))
         .connect(&db_connection_str)
