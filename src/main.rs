@@ -18,14 +18,10 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    // initialize tracing
-    tracing_subscriber::fmt::init();
-
     // get environment variables
     let db_connection_str = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://postgres:password@localhost".to_string());
     let addr = std::env::var("ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
-    tracing::info!("Connecting to database at {}", db_connection_str);
 
     // set up connection pool
     let pool = PgPoolOptions::new()
@@ -56,6 +52,5 @@ async fn main() {
 
     // run app
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    tracing::info!("Listening on {}", addr);
     axum::serve(listener, app).await.unwrap();
 }
