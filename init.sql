@@ -1,7 +1,20 @@
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+SET default_tablespace = '';
+SET default_table_access_method = heap;
+
+
 CREATE UNLOGGED TABLE cliente (
 	id SERIAL PRIMARY KEY,
 	nome VARCHAR(50) NOT NULL,
-	valor INTEGER NOT NULL,
+	saldo INTEGER NOT NULL,
 	limite INTEGER NOT NULL
 );
 
@@ -23,7 +36,7 @@ CREATE INDEX ix_transacao_idcliente ON transacao
 
 DO $$
 BEGIN
-	INSERT INTO cliente (nome, limite, valor)
+	INSERT INTO cliente (nome, limite, saldo)
 	VALUES
 		('ed', 100000, 0),
 		('li', 80000, 0),
@@ -50,7 +63,7 @@ BEGIN
 	PERFORM pg_advisory_xact_lock(cliente_id_tx);
 	SELECT 
 		c.limite,
-		COALESCE(c.valor, 0)
+		COALESCE(c.saldo, 0)
 	INTO
 		limite_atual,
 		saldo_atual
@@ -62,12 +75,12 @@ BEGIN
 			VALUES(DEFAULT, cliente_id_tx, valor_tx, 'd', descricao_tx, NOW());
 		
 		UPDATE cliente
-		SET valor = valor - valor_tx
+		SET saldo = saldo - valor_tx
 		WHERE id = cliente_id_tx;
 
 		RETURN QUERY
 			SELECT
-				valor,
+				saldo,
 				FALSE,
 				'ok'::VARCHAR(20)
 			FROM cliente
@@ -75,7 +88,7 @@ BEGIN
 	ELSE
 		RETURN QUERY
 			SELECT
-				valor,
+				saldo,
 				TRUE,
 				'saldo insuficente'::VARCHAR(20)
 			FROM cliente
@@ -102,8 +115,8 @@ BEGIN
 
 	RETURN QUERY
 		UPDATE cliente
-		SET valor = valor + valor_tx
+		SET saldo = saldo + valor_tx
 		WHERE id = cliente_id_tx
-		RETURNING valor, FALSE, 'ok'::VARCHAR(20);
+		RETURNING saldo, FALSE, 'ok'::VARCHAR(20);
 END;
 $$;

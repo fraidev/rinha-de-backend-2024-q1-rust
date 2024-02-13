@@ -43,15 +43,12 @@ pub async fn transacoes(
         }
     };
 
-    let user = sqlx::query!("SELECT * FROM cliente WHERE id = $1", id)
-        .fetch_one(&app_state.db)
-        .await
-        .map_err(map_sql_error)?;
+    let limite = app_state.limites.get(&id);
 
-    let transaction = match tipo {
+    let transacao = match tipo {
         TipoTransacao::Credito => {
-            let creditar_result = sqlx::query!(
-                "SELECT * FROM creditar($1, $2, $3) AS result",
+            let tranasacao = sqlx::query!(
+                "SELECT * FROM creditar($1, $2, $3)",
                 id,
                 login.valor as i32,
                 login.descricao
@@ -59,16 +56,15 @@ pub async fn transacoes(
             .fetch_one(&app_state.db)
             .await
             .map_err(map_sql_error)?;
-
             (
-                creditar_result.novo_saldo,
-                creditar_result.possui_erro,
-                creditar_result.mensagem,
+                tranasacao.novo_saldo,
+                tranasacao.possui_erro,
+                tranasacao.mensagem,
             )
         }
         TipoTransacao::Debito => {
-            let debitar_result = sqlx::query!(
-                "SELECT * FROM debitar($1, $2, $3) AS result",
+            let transacao = sqlx::query!(
+                "SELECT * FROM debitar($1, $2, $3)",
                 id,
                 login.valor as i32,
                 login.descricao
@@ -76,23 +72,26 @@ pub async fn transacoes(
             .fetch_one(&app_state.db)
             .await
             .map_err(map_sql_error)?;
-
             (
-                debitar_result.novo_saldo,
-                debitar_result.possui_erro,
-                debitar_result.mensagem,
+                transacao.novo_saldo,
+                transacao.possui_erro,
+                transacao.mensagem,
             )
         }
     };
 
-    Ok(Json(json!({"limite": user.limite, "saldo": transaction.0})))
+    if transacao.1.is_some() && transacao.1.unwrap() {
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, transacao.2.unwrap()));
+    }
+
+    Ok(Json(json!({"limite": limite, "saldo": transacao.0})))
 }
 
 pub async fn extrato(
     State(app_state): State<Arc<AppState>>,
     Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let client = sqlx::query!("SELECT * FROM cliente WHERE id = $1", id)
+    let cliente = sqlx::query!("SELECT * FROM cliente WHERE id = $1", id)
         .fetch_one(&app_state.db)
         .await
         .map_err(map_sql_error)?;
@@ -106,23 +105,23 @@ pub async fn extrato(
     .map_err(map_sql_error)?
     .iter()
     .map(|t| Transacao {
-        valor: t.valor as u64,
+        valor: t.valor as u32,
         tipo: t.tipo.clone(),
         descricao: t.descricao.clone(),
         realizada_em: t.realizada_em,
     })
     .collect();
 
-    let extract = Extrato {
+    let extrato = Extrato {
         saldo: Saldo {
-            total: client.valor as i64,
+            total: cliente.saldo,
             data_extrato: Utc::now().naive_utc(),
-            limite: client.limite as u64,
+            limite: cliente.limite as u32,
         },
         ultimas_transacoes,
     };
 
-    Ok(Json(json!(extract)))
+    Ok(Json(json!(extrato)))
 }
 
 fn map_sql_error(err: sqlx::Error) -> (StatusCode, String) {

@@ -16,14 +16,14 @@ pub struct Extrato {
 
 #[derive(Serialize)]
 pub struct Saldo {
-    pub total: i64,
+    pub total: i32,
     pub data_extrato: NaiveDateTime,
-    pub limite: u64,
+    pub limite: u32,
 }
 
 #[derive(Serialize)]
 pub struct Transacao {
-    pub valor: u64,
+    pub valor: u32,
     pub tipo: String,
     pub descricao: String,
     pub realizada_em: NaiveDateTime,

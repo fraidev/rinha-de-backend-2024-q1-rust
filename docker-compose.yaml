@@ -4,41 +4,43 @@ services:
   api01: &api
     image: rinha-de-backend-2024-q1-rust
     hostname: api01
+    network_mode: host
     environment:
-      - DATABASE_URL=postgresql://myuser:mypassword@db:5432/rinha
-    ports:
-      - "3001:3000"
+      - DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/rinha
+      - ADDR=0.0.0.0:3001
     depends_on:
       - db
     deploy:
       resources:
         limits:
           cpus: '0.3'
-          memory: '80MB'
+          memory: '97MB'
 
   api02:
     <<: *api
     hostname: api02
-    ports:
-      - "3002:3000"
+    network_mode: host
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/rinha
+      - ADDR=0.0.0.0:3002
       
   nginx:
     image: nginx:latest
+    network_mode: host
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - api01
       - api02
-    ports:
-      - "9999:9999"
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: '134MB'
+          cpus: '0.2'
+          memory: '50MB'
 
   db:
     image: postgres:latest
+    network_mode: host
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
@@ -46,15 +48,9 @@ services:
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     command: postgres -c max_connections=1000 -c shared_buffers=128MB -c synchronous_commit=off -c fsync=off -c full_page_writes=off
-    ports:
-      - "5432:5432"
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.7'
           memory: '256MB'
 
-networks:
-  default:
-    driver: bridge
-    name: frai-rinha-rust-2024q1

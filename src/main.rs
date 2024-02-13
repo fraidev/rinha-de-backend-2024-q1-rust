@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -11,6 +12,7 @@ pub mod api;
 
 pub struct AppState {
     db: Pool<Postgres>,
+    limites: HashMap<i32, i32>,
 }
 
 #[tokio::main]
@@ -34,13 +36,26 @@ async fn main() {
         .await
         .expect("can't connect to database");
 
+    let clients = sqlx::query!("SELECT * FROM cliente")
+        .fetch_all(&pool)
+        .await
+        .expect("can't fetch clients");
+
+    // As limits are never changed, we can use a cache
+    let mut limites = HashMap::new();
+    for cliente in clients {
+        limites.insert(cliente.id, cliente.limite as i32);
+    }
+
     // build our application with a route
-    let app_state_arc = Arc::new(AppState { db: pool });
+    let app_state_arc = Arc::new(AppState {
+        db: pool,
+        limites,
+    });
     let app = router::create_router(app_state_arc);
 
-    // run our app with hyper, listening globally on port 3000
+    // run app
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     tracing::info!("Listening on {}", addr);
-
     axum::serve(listener, app).await.unwrap();
 }

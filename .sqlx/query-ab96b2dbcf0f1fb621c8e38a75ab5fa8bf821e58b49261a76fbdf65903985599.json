@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM creditar($1, $2, $3) AS result",
+  "query": "SELECT * FROM debitar($1, $2, $3)",
   "describe": {
     "columns": [
       {
@@ -32,5 +32,5 @@
       null
     ]
   },
-  "hash": "b73577b32c798edc25a147a1964cb7b7077fa17abbff25077b4735cb07265bbb"
+  "hash": "ab96b2dbcf0f1fb621c8e38a75ab5fa8bf821e58b49261a76fbdf65903985599"
 }
