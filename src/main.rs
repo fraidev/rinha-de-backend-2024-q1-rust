@@ -25,29 +25,24 @@ async fn main() {
 
     // set up connection pool
     let pool = PgPoolOptions::new()
-        .min_connections(20)
-        .max_connections(1000)
+        .min_connections(30)
         .acquire_timeout(Duration::from_secs(3))
         .connect(&db_connection_str)
         .await
         .expect("can't connect to database");
 
+    // As limits are never changed, we can use a cache
+    let mut limites = HashMap::new();
     let clients = sqlx::query!("SELECT * FROM cliente")
         .fetch_all(&pool)
         .await
         .expect("can't fetch clients");
-
-    // As limits are never changed, we can use a cache
-    let mut limites = HashMap::new();
     for cliente in clients {
         limites.insert(cliente.id, cliente.limite as i32);
     }
 
     // build our application with a route
-    let app_state_arc = Arc::new(AppState {
-        db: pool,
-        limites,
-    });
+    let app_state_arc = Arc::new(AppState { db: pool, limites });
     let app = router::create_router(app_state_arc);
 
     // run app
